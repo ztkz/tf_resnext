@@ -25,26 +25,23 @@ def main(argv):
     test, test_steps = data_utils.preprocess_dataset(test, test_steps, FLAGS.batch_size)
 
     layer_factory = LayerFactory(weight_decay=FLAGS.weight_decay)
-    model = models.resnext(
-        layer_factory=layer_factory,
-        cardinality=FLAGS.cardinality,
-        depth=FLAGS.depth,
-        base_width=FLAGS.base_width,
-        residual_type=models.ResidualType[FLAGS.residual_type],
-    )
-    if FLAGS.num_gpus > 1:
-        model = tf.keras.utils.multi_gpu_model(model,
-                                               gpus=FLAGS.num_gpus,
-                                               cpu_merge=True,
-                                               cpu_relocation=False)
-    model.compile(
-        loss=metrics.sparse_cross_entropy_loss,
-        optimizer=tf.keras.optimizers.SGD(lr=0.0,
-                                          momentum=FLAGS.momentum,
-                                          nesterov=FLAGS.use_nesterov),
-        metrics=[metrics.accuracy],
-    )
-    assert model.built
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        model = models.resnext(
+            layer_factory=layer_factory,
+            cardinality=FLAGS.cardinality,
+            depth=FLAGS.depth,
+            base_width=FLAGS.base_width,
+            residual_type=models.ResidualType[FLAGS.residual_type],
+        )
+        model.compile(
+            loss=metrics.sparse_cross_entropy_loss,
+            optimizer=tf.keras.optimizers.SGD(lr=0.0,
+                                              momentum=FLAGS.momentum,
+                                              nesterov=FLAGS.use_nesterov),
+            metrics=[metrics.accuracy],
+        )
+        assert model.built
 
     model.summary()
 
@@ -64,5 +61,9 @@ def main(argv):
         print("Best testing set accuracy: {:.4f}.".format(best_test_accuracy))
 
 
-if __name__ == "__main__":
+def run_app():
     app.run(main)
+
+
+if __name__ == "__main__":
+    run_app()

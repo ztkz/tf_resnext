@@ -12,8 +12,8 @@ setup(
     description="TensorFlow reimplementation of ResNext",
     packages=find_packages(),
     python_requires=">=3.5",
-    install_requires=["absl-py", "numpy", "tensorflow-gpu==1.14.0"],
+    install_requires=["absl-py", "gast==0.2.2", "numpy", "tensorflow-gpu==1.14.0"],
     entry_points={
-        "console_scripts": ["tf_resnext = tf_resnext.__main__:main"]
+        "console_scripts": ["tf_resnext = tf_resnext.__main__:run_app"]
     },
 )
